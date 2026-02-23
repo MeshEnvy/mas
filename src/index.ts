@@ -21,21 +21,34 @@ export interface Env {
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		const corsHeaders = {
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+			'Access-Control-Allow-Headers': '*',
+			'Access-Control-Max-Age': '86400',
+		};
+
+		if (request.method === 'OPTIONS') {
+			return new Response(null, {
+				headers: corsHeaders,
+			});
+		}
+
 		const url = new URL(request.url);
 		const path = url.pathname.slice(1);
 
 		if (request.method === 'GET') {
 			if (!path) {
-				return new Response('Not found', { status: 404 });
+				return new Response('Not found', { status: 404, headers: corsHeaders });
 			}
 
 			const object = await env.IMAGES.get(`${path}.webp`);
 
 			if (object === null) {
-				return new Response('Not found', { status: 404 });
+				return new Response('Not found', { status: 404, headers: corsHeaders });
 			}
 
-			const headers = new Headers();
+			const headers = new Headers(corsHeaders);
 			object.writeHttpMetadata(headers);
 			headers.set('etag', object.httpEtag);
 
@@ -45,7 +58,10 @@ export default {
 		}
 
 		if (request.method !== 'POST' && request.method !== 'PUT') {
-			return new Response('Method not allowed', { status: 405 });
+			return new Response('Method not allowed', {
+				status: 405,
+				headers: corsHeaders,
+			});
 		}
 
 		try {
@@ -101,7 +117,7 @@ export default {
 			});
 
 			return new Response(JSON.stringify({ hash: shortHash }), {
-				headers: { 'Content-Type': 'application/json' },
+				headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 			});
 		} catch (error) {
 			console.error('Processing error:', error);
@@ -109,7 +125,7 @@ export default {
 				JSON.stringify({ error: 'Failed to process image', details: error instanceof Error ? error.message : String(error) }),
 				{
 					status: 500,
-					headers: { 'Content-Type': 'application/json' },
+					headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 				},
 			);
 		}
