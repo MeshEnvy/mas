@@ -1,13 +1,11 @@
-import resize, { initResize } from '@jsquash/resize';
-import encodeWebp, { init as initWebp } from '@jsquash/webp/encode';
-import decodeJpeg, { init as initJpeg } from '@jsquash/jpeg/decode';
-import decodePng, { init as initPng } from '@jsquash/png/decode';
+import decodeWebp, { init as initWebpDec } from '@jsquash/webp/decode';
+import encodeWebp, { init as initWebpEnc } from '@jsquash/webp/encode';
 
 // Import WASM binaries
-import resizeWasm from '@jsquash/resize/lib/resize/pkg/squoosh_resize_bg.wasm';
+// @ts-ignore
 import webpEncWasm from '@jsquash/webp/codec/enc/webp_enc.wasm';
-import jpegDecWasm from '@jsquash/jpeg/codec/dec/mozjpeg_dec.wasm';
-import pngDecWasm from '@jsquash/png/codec/pkg/squoosh_png_bg.wasm';
+// @ts-ignore
+import webpDecWasm from '@jsquash/webp/codec/dec/webp_dec.wasm';
 
 export interface ImageData {
 	readonly width: number;
@@ -68,38 +66,64 @@ export default {
 			const arrayBuffer = await request.arrayBuffer();
 			const contentType = request.headers.get('content-type') || '';
 
-			let imageData: ImageData;
+			let imageData: ImageData | null = null;
 
-			if (contentType.includes('jpeg') || contentType.includes('jpg')) {
-				await initJpeg(jpegDecWasm);
-				imageData = await decodeJpeg(arrayBuffer);
-			} else if (contentType.includes('png')) {
-				await initPng(pngDecWasm);
-				imageData = await decodePng(arrayBuffer);
-			} else {
-				// Fallback to trying to decode as Jpeg then Png if content-type is missing or generic
-				try {
-					await initJpeg(jpegDecWasm);
-					imageData = await decodeJpeg(arrayBuffer);
-				} catch {
-					await initPng(pngDecWasm);
-					imageData = await decodePng(arrayBuffer);
+			// Strictly allow only WebP
+			if (contentType && !contentType.includes('webp')) {
+				return new Response(JSON.stringify({ error: 'Unsupported image format. Only WebP is allowed.' }), {
+					status: 400,
+					headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+				});
+			}
+
+			try {
+				await initWebpDec(webpDecWasm);
+				imageData = await decodeWebp(arrayBuffer);
+			} catch (e) {
+				// Fallback to magic number check if Content-Type was missing or misleading
+				const magic = new Uint8Array(arrayBuffer.slice(0, 12));
+				if (
+					magic[0] === 0x52 &&
+					magic[1] === 0x49 &&
+					magic[2] === 0x46 &&
+					magic[3] === 0x46 &&
+					magic[8] === 0x57 &&
+					magic[9] === 0x45 &&
+					magic[10] === 0x42 &&
+					magic[11] === 0x50
+				) {
+					await initWebpDec(webpDecWasm);
+					imageData = await decodeWebp(arrayBuffer);
 				}
 			}
 
-			// Resize if dimensions > 2048
-			const MAX_DIMENSION = 2048;
-			let finalImageData = imageData;
-			if (imageData.width > MAX_DIMENSION || imageData.height > MAX_DIMENSION) {
-				const ratio = Math.min(MAX_DIMENSION / imageData.width, MAX_DIMENSION / imageData.height);
-				const width = Math.round(imageData.width * ratio);
-				const height = Math.round(imageData.height * ratio);
-				await initResize(resizeWasm);
-				finalImageData = await resize(imageData, { width, height });
+			if (!imageData) {
+				return new Response(JSON.stringify({ error: 'Invalid WebP image data' }), {
+					status: 400,
+					headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+				});
 			}
 
+			// Reject if dimensions > 2048
+			const MAX_DIMENSION = 2048;
+			if (imageData.width > MAX_DIMENSION || imageData.height > MAX_DIMENSION) {
+				return new Response(
+					JSON.stringify({
+						error: `Image dimensions exceed the limit of ${MAX_DIMENSION}px.`,
+						width: imageData.width,
+						height: imageData.height,
+					}),
+					{
+						status: 400,
+						headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+					},
+				);
+			}
+
+			const finalImageData = imageData;
+
 			// Convert to WebP
-			await initWebp(webpEncWasm);
+			await initWebpEnc(webpEncWasm);
 			const webpBuffer = await encodeWebp(finalImageData);
 
 			// Generate short hash
@@ -130,4 +154,4 @@ export default {
 			);
 		}
 	},
-} satisfies ExportedHandler<Env>;
+};
