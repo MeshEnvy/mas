@@ -4,6 +4,16 @@ The Mesh Asset Server is an MIT asset server to side-load images for LoRa Mesh c
 
 By default, assets are stored for 30 days.
 
+The server supports the following input image formats:
+- JPEG
+- PNG
+- GIF
+- WebP
+- AVIF
+- TIFF
+
+All images are converted to WebP for storage and delivery.
+
 **Official Endpoint**
 
 https://mas.meshenvy.org/
