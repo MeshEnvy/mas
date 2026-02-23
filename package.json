@@ -14,7 +14,7 @@
 		"@types/node": "^25.3.0",
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",
-		"wrangler": "^4.67.0"
+		"wrangler": "^4.68.0"
 	},
 	"dependencies": {
 		"@jsquash/jpeg": "^1.6.0",
