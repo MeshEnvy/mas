@@ -1,5 +1,5 @@
 export interface Env {
-	IMAGES: R2Bucket;
+	ASSETS: R2Bucket;
 }
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
@@ -27,7 +27,7 @@ export default {
 				return new Response('Not found', { status: 404, headers: corsHeaders });
 			}
 
-			const object = await env.IMAGES.get(path);
+			const object = await env.ASSETS.get(path);
 
 			if (object === null) {
 				return new Response('Not found', { status: 404, headers: corsHeaders });
