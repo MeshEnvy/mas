@@ -10,12 +10,10 @@
 	"observability": {
 		"enabled": true,
 	},
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
+	"compatibility_flags": ["nodejs_compat"],
 	"r2_buckets": [
 		{
-			"binding": "IMAGES",
+			"binding": "ASSETS",
 			"bucket_name": "mesh-asset-server",
 		},
 	],

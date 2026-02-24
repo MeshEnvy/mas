@@ -1,18 +1,12 @@
 # Mesh Asset Server
 
-The Mesh Asset Server is an MIT asset server to side-load images for LoRa Mesh clients.
+The Mesh Asset Server is an MIT asset server to side-load asset blobs for LoRa Mesh clients.
 
 By default, assets are stored for 30 days.
 
-The server supports the following input image formats:
-- JPEG
-- PNG
-- GIF
-- WebP
-- AVIF
-- TIFF
+The server will accept any asset blob up to 10MB. The assets are treated as opaque blobs, so it is your responsbility to handle encryption/decryption and storing the content type of the asset in the blob itself. 
 
-All images are converted to WebP for storage and delivery.
+For security, MAS does *not* track the asset type. Everything is treated as an opaque blob.
 
 **Official Endpoint**
 
@@ -22,14 +16,14 @@ https://mas.meshenvy.org/
 
 ### POST /
 
-Upload an image to the server. The server will return a short hash of the image.
+Upload a blob to the server. The server will return a short hash of the blob.
 
 ```http
 POST / HTTP/1.1
 Host: mas.meshenvy.org
-Content-Type: image/jpeg
+Content-Type: application/octet-stream
 
-<image-data>
+<blob-data>
 ```
 
 ```http
@@ -43,7 +37,7 @@ Content-Type: application/json
 
 ### GET /:hash
 
-Fetch an image from the server.
+Fetch a blob from the server.
 
 ```http
 GET /9cdc4d HTTP/1.1
@@ -52,7 +46,7 @@ Host: mas.meshenvy.org
 
 ```http
 HTTP/1.1 200 OK
-Content-Type: image/webp
+Content-Type: application/octet-stream
 
-<image-data>
+<blob-data>
 ```

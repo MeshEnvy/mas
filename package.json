@@ -12,19 +12,8 @@
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.12.4",
 		"@types/node": "^25.3.0",
-		"@types/omggif": "^1.0.5",
-		"@types/utif": "^3.0.6",
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",
 		"wrangler": "^4.68.0"
-	},
-	"dependencies": {
-		"@jsquash/avif": "^2.1.1",
-		"@jsquash/jpeg": "^1.6.0",
-		"@jsquash/png": "^3.1.1",
-		"@jsquash/resize": "^2.1.1",
-		"@jsquash/webp": "^1.5.0",
-		"omggif": "^1.0.10",
-		"utif": "^3.1.0"
 	}
 }
